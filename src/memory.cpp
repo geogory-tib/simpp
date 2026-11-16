@@ -161,6 +161,10 @@ void *simpp::garena::realloc(void *addr, size_t size){
   return ret;
 }
 
+void simpp::garena::free(void *addr){
+  return;
+}
+
 void simpp::garena::destroy(){
   for(int i = this->pages_len - 1;i >= 0;i--){
 	this->pages[i].destroy();

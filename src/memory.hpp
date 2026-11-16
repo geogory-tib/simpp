@@ -150,12 +150,21 @@ namespace simpp{
 	static garena new_garena(size_t page_size);
 	void *alloc(size_t size);
 	// no-op like on the arena
-	void *free(void *addr);
+	void free(void *addr);
 	void *realloc(void *addr,size_t size);
 	void destroy();
   private:
 	allocation_tracker tracker;
 	garena_page* new_page();
   };
+/*
+  struct iallocator:
+  
+  This is the interface for allocators if runtime
+  polymorphism is required for some reason
+  this actually used in the string implementation
+  because it would be a headache to actually use templates
+  for each time a function needs to use a string
+*/
 
 }

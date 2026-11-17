@@ -1,4 +1,4 @@
-FLAGS = -c -std=c++11 -Wall -Werror
+FLAGS = -c -std=c++14 -Wall -Werror
 
 
 libsimpp.a:

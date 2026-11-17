@@ -50,8 +50,8 @@ namespace simpp{
 	bool operator==(cslice<T>& other){
 	  if(other.len != len)
 		return false;
-	  for(int i = 0;i < len;i++){
-		if(other[i] != *this[i])
+	  for(size_t i = 0;i < len;i++){
+		if(other[i] != (*this)[i])
 		  return false;
 	  }
 	  return true;
@@ -232,6 +232,9 @@ namespace simpp{
 	  for(int i = 0;i < elements.len;i++){
 		insert_at(elements[i],index + i,al);
 	  }
+	}
+	cslice<T> toslice(){
+	  return cslice<T>{.buffer = buffer,.len = len};
 	}
 	
 	//If using an arena allocator, this will pretty much do nothing

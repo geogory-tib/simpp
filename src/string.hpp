@@ -2,7 +2,8 @@
 #include "memory.hpp"
 #include "containers.hpp"
 #include <cstring>
-
+#include <cstdint>
+#include <cmath>
 /*
   string.h
   simple string helper functions
@@ -16,7 +17,7 @@
 namespace simpp{
   typedef cslice<char> string;
   typedef dynarray<char> stringbuilder;
-  
+  extern const char ascii_lookup_tables[][3];
   /*
 	constexpr string STRLIT_TO_STRING(const char *str):
 	
@@ -137,4 +138,121 @@ namespace simpp{
 	Do not using string::destroy() on this slice, it will more than break your program if using malloc
    */
   string string_trim(string trimset,string s);
+  // this is kind of slow but it will be okay
+  template<typename Allocator = malloc_allocator>
+  string string_int_conv(std::int64_t num,Allocator& al = default_alloc){
+	const char ascii_lookup_tables[] = {
+	  '0','1','2','3','4',
+	  '5','6','7','8','9',
+	};
+	string ret;
+	if(num == 0){
+	  ret = string::make(1, al);
+	  ret[0] = '0';
+	  return ret;
+	}
+
+	stringbuilder builder = stringbuilder::make(3, al);
+	std::int64_t abs_val = (num < 0) ? -num : num;
+	while(abs_val!= 0){
+	  std::int64_t last_val = abs_val % 10;
+	  builder.insert_at(ascii_lookup_tables[last_val],0,al);
+	  abs_val /= 10;
+	}
+	if(num < 0)
+	  builder.insert_at('-',0, al);
+	ret = builder.toslice();
+	return ret;
+  }
+  template<typename Allocator = malloc_allocator> 
+  string string_float_conv(float num, Allocator& al = default_alloc){
+	stringbuilder builder = stringbuilder::make(3, al);
+	if(isnanf(num)){
+	  builder.append_arr(STRLIT_TO_STRING("NaN"), al);
+	  return builder.toslice();
+	}else if(isinff(num)){
+	  if(num < 0)
+		builder.append('-', al);
+	  builder.append_arr(STRLIT_TO_STRING("Inf"), al);
+	  return builder.toslice();
+	}
+	//  float val = num;
+	float modifedf = num;
+	int power = 0;
+	while(modifedf != (int)modifedf){
+	  modifedf *= (10);
+	  power++;
+	}
+	int conv_int = (num < 0) ? (int)(-modifedf) : modifedf;
+	auto conv = string_int_conv(conv_int,al);
+	auto whole_number = string::slice(conv, 0,conv.len - power);
+	auto fractional_number = string::slice(conv,(conv.len) - power, conv.len);
+	if(num < 0){
+	  builder.append('-', al);
+	}
+	builder.append_arr(whole_number, al);
+	builder.append('.', al);
+	builder.append_arr(fractional_number, al);
+	string::destroy(conv, al);
+	return builder.toslice();
+  }
+
+  template<typename Allocator = malloc_allocator> 
+  string string_float_conv(double num, Allocator& al = default_alloc){
+	stringbuilder builder = stringbuilder::make(3, al);
+	if(isnanf(num)){
+	  builder.append_arr(STRLIT_TO_STRING("NaN"), al);
+	  return builder.toslice();
+	}else if(isinff(num)){
+	  if(num < 0)
+		builder.append('-', al);
+	  builder.append_arr(STRLIT_TO_STRING("Inf"), al);
+	  return builder.toslice();
+	}
+	//  float val = num;
+	double modifedf = num;
+	int power = 0;
+	while(modifedf != (int64_t)modifedf){
+	  modifedf *= (10);
+	  power++;
+	}
+	int64_t conv_int = (num < 0) ? (int64_t)(-modifedf) : modifedf;
+	auto conv = string_int_conv(conv_int,al);
+	auto whole_number = string::slice(conv, 0,conv.len - power);
+	auto fractional_number = string::slice(conv,(conv.len) - power, conv.len);
+	if(num < 0){
+	  builder.append('-', al);
+	}
+	builder.append_arr(whole_number, al);
+	builder.append('.', al);
+	builder.append_arr(fractional_number, al);
+	string::destroy(conv, al);
+	return builder.toslice();
+  }
+  template<typename Allocator = malloc_allocator> 
+  string string_pointer_conv(const void *ptr,Allocator& al = default_alloc){
+	const char ascii_lookup_tables[] = {
+	  '0','1','2','3','4',
+	  '5','6','7','8','9',
+	  'a','b','c','d','e',
+	  'f'
+	};
+	stringbuilder builder = stringbuilder::make(3, al);
+	if(ptr == nullptr){
+	  builder.append_arr(STRLIT_TO_STRING("(nullptr)"), al);
+	}
+	int ptr_len = 0;
+	uintptr_t ptr_val = (uintptr_t)const_cast<void*>(ptr);
+	uintptr_t modifed_ptr = ptr_val;
+	builder.append_arr(STRLIT_TO_STRING("0x"),al);
+	while(modifed_ptr != 0x0){
+	  int mod_val = modifed_ptr & 0x10 - 1;
+	  builder.insert_at(ascii_lookup_tables[mod_val],2,al);
+	  modifed_ptr >>= 4;
+	}
+	return builder.toslice();
+  }
 }
+
+
+

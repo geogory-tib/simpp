@@ -39,6 +39,29 @@ namespace simpp{
 	auto val = STRLIT_TO_STRING(cstr);
 	print_val(val);
   }
+  template<typename T>
+  inline void print_val(cslice<T> s){
+	print(STRLIT_TO_STRING("[ "));
+	for(size_t i = 0;i < s.len;i++){
+	  print_val(s[i]);
+	  if(i != s.len - 1)
+		print(STRLIT_TO_STRING(", "));
+	}
+
+	print(STRLIT_TO_STRING(" ]"));
+  }
+  
+  template<typename T>
+  inline void print_val(dynarray<T> s){
+	print(STRLIT_TO_STRING("[ "));
+	for(size_t i = 0;i < s.len;i++){
+	  print_val(s[i]);
+	  if(i != s.len - 1)
+		print(STRLIT_TO_STRING(", "));
+	}
+
+	print(STRLIT_TO_STRING(" ]"));
+  }
   inline void printf(string fmt){
 	auto nonestr = STRLIT_TO_STRING("(none)");
 	size_t last = 0;
@@ -64,6 +87,7 @@ namespace simpp{
 		last = i + 1;
 		auto remaing = string::slice(fmt, last, fmt.len);
 		printf(remaing, args...);
+		return;
 	  }
 	}
   }

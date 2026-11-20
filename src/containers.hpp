@@ -1,6 +1,7 @@
 #pragma once
 #include "memory.hpp"
 #include <cstring>
+#include <cstdint>
 /*
   containers.hpp: V0.01
   Containers is a simple template library with common data structures
@@ -11,6 +12,7 @@
 */
 
 namespace simpp{
+  typedef uint8_t byte;
  /*
 	cslice:
 	
@@ -246,7 +248,119 @@ namespace simpp{
 	}
   };
 
-
- 
+  // uses FNV-1 hash converts base cslice type to byte slice
+  template<typename T>
+  uint64_t map_hash(cslice<T> key){
+	cslice<byte> key_data = {.buffer = (byte *)key.buffer,.len = (key.len * sizeof(T))};
+	uint64_t hash = 0xcbf29ce484222325ull;
+	for(size_t i = 0;i < key_data.len;i++){
+	  hash ^= key_data[0];
+	  hash *= 0x100000001b3ull;
+	}
+	return hash;
+  }
+  inline uint64_t map_hash(int key){
+	byte * data = (byte *)&key;
+	uint64_t hash = 0xcbf29ce484222325ull;
+	for(size_t i = 0;i < sizeof(key);i++){
+	  hash ^= data[0];
+	  hash *= 0x100000001b3ull;
+	}
+	return hash;
+  }
+  
+  template<typename Key,typename T>
+  struct map_entry{
+	Key key;
+	T data;
+	bool filled = false;
+	bool deleted = false;
+  };
+  
+  template<typename Key,typename T>
+  struct map{
+	cslice<map_entry<Key,T>> entries;
+	size_t entries_filled = 0;
+	template<typename Allocator = malloc_allocator>
+	static map<Key,T> make(size_t size,Allocator& al = default_alloc){
+	  map<Key,T> ret;
+	  ret.entries = cslice<map_entry<Key,T>>::make(size,al);
+	  std::memset(ret.entries.buffer, 0, sizeof(map_entry<Key,T>) * ret.entries.len);
+	  ret.entries_filled = 0;
+	  return ret;
+	}
+	template<typename Allocator = malloc_allocator>
+	void grow(Allocator& al = default_alloc){
+	  auto new_entry_buf = cslice<map_entry<Key,T>>::make(entries.len * 2,al);
+	  std::memset(new_entry_buf.buffer, 0, sizeof(map_entry<Key,T>) * new_entry_buf.len);
+	  for(size_t i = 0; i < entries.len;i++){
+		if(!entries[i].filled || entries[i].deleted)
+		  continue;
+		auto entry = entries[i];
+		auto hash = map_hash(entry.key);
+		auto ind = hash % new_entry_buf.len;
+		if(new_entry_buf[ind].filled){
+		  do{
+			ind = ind + 1 % new_entry_buf.len;
+		  }while(new_entry_buf[ind].filled);
+		}
+		new_entry_buf[ind] = entry;
+	  }
+	  entries.destroy(entries, al);
+	  entries = new_entry_buf;
+	}
+	bool if_needs_resized(){
+	  float percent_used = (float)(entries_filled) / (float)(entries.len);
+	  if(percent_used >= 0.50f)
+		return true;
+	  return false;
+	}
+	template<typename Allocator = malloc_allocator>
+	void set(Key key,T data,Allocator& al = default_alloc){
+	  if(if_needs_resized()){
+		grow(al);
+	  }
+	  auto hash = map_hash(key);
+	  auto ind = hash % entries.len;
+	  if(entries[ind].filled){
+		do{
+		  ind = ind + 1 % entries.len;
+		}while(entries[ind].filled);
+	  }
+	  entries[ind].data = data;
+	  entries[ind].key = key;
+	  entries[ind].filled = true;
+	  entries_filled++;
+	}
+	T *get(Key key){
+	  auto hash = map_hash(key);
+	  auto ind = hash % entries.len;
+	  if(!(entries[ind].key == key)){
+		do{
+		  ind = ind + 1 % entries.len;
+		  if(!entries[ind].filled)
+			return nullptr;
+		}while(!(entries[ind].key == key));
+	  }
+	  if(entries[ind].deleted)
+		return nullptr;
+	  return &entries[ind].data;
+	}
+	void del(Key key){
+	  auto hash = map_hash(key);
+	  auto ind = hash % entries.len;
+	  if(!(entries[ind].key == key)){
+		do{
+		  ind = ind + 1 % entries.len;
+		}while(!(entries[ind].key == key));
+	  }
+	  entries[ind].deleted = true;
+	}
+	template<typename Allocator = malloc_allocator>
+	void destroy(Allocator& al = default_alloc){
+	  entries.destroy(entries, al);
+	  entries_filled = 0;
+	}
+  };
 }
 

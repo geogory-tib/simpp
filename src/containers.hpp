@@ -80,13 +80,13 @@ namespace simpp{
 		copy_len = dst.len;
 	  else
 		copy_len = src.len;
-	  std::memcpy(dst.buffer, src.buffer, copy_len);
+	  std::memcpy(dst.buffer, src.buffer, (copy_len * sizeof(T)));
 	  return copy_len;
 	}
 	template<typename Allocator = malloc_allocator>
 	static cslice<T>copy(cslice<T> other,Allocator al = default_alloc){
 	  cslice<T> ret;
-	  ret.buffer = (T*)al.alloc(other.len);
+	  ret.buffer = (T*)al.alloc(other.len * sizeof(T));
 	  ret.len = other.len;
 	  std::memcpy(ret.buffer, other.buffer, other.len * (sizeof(T)));
 	  return ret;

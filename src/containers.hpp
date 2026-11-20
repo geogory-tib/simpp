@@ -212,7 +212,7 @@ namespace simpp{
 	}
 	
 	template<typename Allocator = malloc_allocator>
-	static void append_arr(dynarray<T> elements,Allocator&al = default_alloc){
+	void append_arr(dynarray<T> elements,Allocator&al = default_alloc){
 	  for(int i = 0;i < elements.len;i++){
 	   append(elements[i],al);
 	  }

@@ -36,59 +36,59 @@ namespace simpp{
 	string::destroy(val_str);
   }
   inline void print_val(const char *cstr){
-	auto val = STRLIT_TO_STRING(cstr);
+	auto val = string(cstr);
 	print_val(val);
   }
   template<typename T>
   inline void print_val(cslice<T> s){
-	print(STRLIT_TO_STRING("[ "));
+	print(string("[ "));
 	for(size_t i = 0;i < s.len;i++){
 	  print_val(s[i]);
 	  if(i != s.len - 1)
-		print(STRLIT_TO_STRING(", "));
+		print(string(", "));
 	}
 
-	print(STRLIT_TO_STRING(" ]"));
+	print(string(" ]"));
   }
 
   inline void print_val(cslice<string> s){
-	print(STRLIT_TO_STRING("[ "));
+	print(string("[ "));
 	for(size_t i = 0;i < s.len;i++){
-	  print(STRLIT_TO_STRING("\""));
+	  print(string("\""));
 	  print_val(s[i]);
-	  print(STRLIT_TO_STRING("\""));
+	  print(string("\""));
 	  if(i != s.len - 1)
-		print(STRLIT_TO_STRING(", "));
+		print(string(", "));
 	}
 
-	print(STRLIT_TO_STRING(" ]"));
+	print(string(" ]"));
    }
   template<typename T>
   inline void print_val(dynarray<T> s){
-	print(STRLIT_TO_STRING("[ "));
+	print(string("[ "));
 	for(size_t i = 0;i < s.len;i++){
 	  print_val(s[i]);
 	  if(i != s.len - 1)
-		print(STRLIT_TO_STRING(", "));
+		print(string(", "));
 	}
 
-	print(STRLIT_TO_STRING(" ]"));
+	print(string(" ]"));
   }
 
   inline void print_val(dynarray<string> s){
-	print(STRLIT_TO_STRING("[ "));
+	print(string("[ "));
 	for(size_t i = 0;i < s.len;i++){
-	  print(STRLIT_TO_STRING("\""));
+	  print(string("\""));
 	  print_val(s[i]);
-	  print(STRLIT_TO_STRING("\""));
+	  print(string("\""));
 	  if(i != s.len - 1)
-		print(STRLIT_TO_STRING(", "));
+		print(string(", "));
 	}
 
-	print(STRLIT_TO_STRING(" ]"));
+	print(string(" ]"));
   }
   inline void printf(string fmt){
-	auto nonestr = STRLIT_TO_STRING("(none)");
+	auto nonestr = string("(none)");
 	size_t last = 0;
 	for(size_t i = 0; i < fmt.len;i++){
 	  if(fmt[i] == '%'){
@@ -118,7 +118,7 @@ namespace simpp{
   }
   template<typename Allocator = malloc_allocator>
   void sprintf(string fmt,stringbuilder& builder,Allocator& al){
-	auto nonestr = STRLIT_TO_STRING("(none)");
+	auto nonestr = string("(none)");
 	size_t last = 0;
 	for(size_t i = 0; i < fmt.len;i++){
 	  if(fmt[i] == '%'){
@@ -179,50 +179,50 @@ namespace simpp{
   }
   template<typename Allocator = malloc_allocator,typename T>
   void sprint_val(cslice<T> val,stringbuilder& builder,Allocator& al = default_alloc){
-	builder.append_arr(STRLIT_TO_STRING("[ "), al);
+	builder.append_arr(string("[ "), al);
 	for(size_t i = 0;i < val.len;i++){
 	  sprint_val(val[i], builder, al);
 	  if(i != val.len - 1)
-		builder.append_arr(STRLIT_TO_STRING(", "),al);
+		builder.append_arr(string(", "),al);
 	}
-	builder.append_arr(STRLIT_TO_STRING(" ]"), al);
+	builder.append_arr(string(" ]"), al);
   }
 
   template<typename Allocator = malloc_allocator>
   void sprint_val(cslice<string> val,stringbuilder& builder,Allocator& al = default_alloc){
-	builder.append_arr(STRLIT_TO_STRING("[ "), al);
+	builder.append_arr(string("[ "), al);
 	for(size_t i = 0;i < val.len;i++){
 	  builder.append('"', al);
 	  sprint_val(val[i], builder, al);
 	  builder.append('"', al);
 	  if(i != val.len - 1)
-		builder.append_arr(STRLIT_TO_STRING(", "),al);
+		builder.append_arr(string(", "),al);
 	}
-	builder.append_arr(STRLIT_TO_STRING(" ]"), al);
+	builder.append_arr(string(" ]"), al);
   }
 
   template<typename Allocator = malloc_allocator,typename T>
   void sprint_val(dynarray<T> val,stringbuilder& builder,Allocator& al = default_alloc){
-	builder.append_arr(STRLIT_TO_STRING("[ "), al);
+	builder.append_arr(string("[ "), al);
 	for(size_t i = 0;i < val.len;i++){
 	  sprint_val(val[i], builder, al);
 	  if(i != val.len - 1)
-		builder.append_arr(STRLIT_TO_STRING(", "),al);
+		builder.append_arr(string(", "),al);
 	}
-	builder.append_arr(STRLIT_TO_STRING(" ]"), al);
+	builder.append_arr(string(" ]"), al);
   }
 
   template<typename Allocator = malloc_allocator>
   void sprint_val(dynarray<string> val,stringbuilder& builder,Allocator& al = default_alloc){
-	builder.append_arr(STRLIT_TO_STRING("[ "), al);
+	builder.append_arr(string("[ "), al);
 	for(size_t i = 0;i < val.len;i++){
 	  builder.append('"', al);
 	  sprint_val(val[i], builder, al);
 	  builder.append('"', al);
 	  if(i != val.len - 1)
-		builder.append_arr(STRLIT_TO_STRING(", "),al);
+		builder.append_arr(string(", "),al);
 	}
-	builder.append_arr(STRLIT_TO_STRING(" ]"), al);
+	builder.append_arr(string(" ]"), al);
   }
   
   template<typename Allocator = malloc_allocator,typename T,typename ...Args>

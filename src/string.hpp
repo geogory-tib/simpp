@@ -15,9 +15,9 @@
   on the comment above it.
  */
 namespace simpp{
-  typedef cslice<char> string;
+  //typedef cslice<char> string;
   typedef dynarray<char> stringbuilder;
-  extern const char ascii_lookup_tables[][3];
+  //extern const char ascii_lookup_tables[][3];
   /*
 	constexpr string STRLIT_TO_STRING(const char *str):
 	
@@ -26,16 +26,37 @@ namespace simpp{
 	Usefull for when you want to hardcode string values
 	to functions at compile time
    */
-  constexpr string STRLIT_TO_STRING(const char *str){
-	size_t str_len = 0;
-	for(int i = 0;str[i] != '\0';i++){
-	  str_len++;
+
+  // constexpr string STRLIT_TO_STRING(const char *str){
+  // 	size_t str_len = 0;
+  // 	for(int i = 0;str[i] != '\0';i++){
+  // 	  str_len++;
+  // 	}
+  // 	string ret = {.buffer = (char *)str,.len = str_len};
+  // 	return ret;
+  // }
+  struct string : cslice<char>{
+	string() = default;
+	string(cslice<char> base) : cslice<char>(base) {}
+	string(const char *str){
+	  buffer = (char *)str;
+	  len = strlen(str);
 	}
-	string ret = {.buffer = (char *)str,.len = str_len};
-	return ret;
-  }
+	template <size_t N>
+	string(const char (&lit)[N]) {
+	  buffer = const_cast<char*>(lit);
+	  len = N - 1;
+	}
+	
+	static string from_ptr(char *ptr,size_t ptr_len){
+	  string ret;
+	  ret.buffer = ptr;
+	  ret.len = ptr_len;
+	  return ret;
+	}
+  };
   // just a nice little default if you so use to use it
-  constexpr const string SIMPP_TRIM_LIST = STRLIT_TO_STRING(" \r\n\t");
+  const string SIMPP_TRIM_LIST(" \r\n\t");
   /*
 	char *string_to_cstr(str, Allocator& al = default_alloc):
 	
@@ -167,13 +188,13 @@ namespace simpp{
   template<typename Allocator = malloc_allocator> 
   string string_float_conv(float num, Allocator& al = default_alloc){
 	stringbuilder builder = stringbuilder::make(3, al);
-	if(isnanf(num)){
-	  builder.append_arr(STRLIT_TO_STRING("NaN"), al);
+	if(isnan(num)){
+	  builder.append_arr(string("NaN"), al);
 	  return builder.toslice();
-	}else if(isinff(num)){
+	}else if(isinf(num)){
 	  if(num < 0)
 		builder.append('-', al);
-	  builder.append_arr(STRLIT_TO_STRING("Inf"), al);
+	  builder.append_arr(string("Inf"), al);
 	  return builder.toslice();
 	}
 	//  float val = num;
@@ -200,13 +221,13 @@ namespace simpp{
   template<typename Allocator = malloc_allocator> 
   string string_float_conv(double num, Allocator& al = default_alloc){
 	stringbuilder builder = stringbuilder::make(3, al);
-	if(isnanf(num)){
-	  builder.append_arr(STRLIT_TO_STRING("NaN"), al);
+	if(isnan(num)){
+	  builder.append_arr(string("NaN"), al);
 	  return builder.toslice();
-	}else if(isinff(num)){
+	}else if(isinf(num)){
 	  if(num < 0)
 		builder.append('-', al);
-	  builder.append_arr(STRLIT_TO_STRING("Inf"), al);
+	  builder.append_arr(string("Inf"), al);
 	  return builder.toslice();
 	}
 	//  float val = num;
@@ -239,12 +260,11 @@ namespace simpp{
 	};
 	stringbuilder builder = stringbuilder::make(3, al);
 	if(ptr == nullptr){
-	  builder.append_arr(STRLIT_TO_STRING("(nullptr)"), al);
+	  builder.append_arr(string("(nullptr)"), al);
 	}
-	int ptr_len = 0;
 	uintptr_t ptr_val = (uintptr_t)const_cast<void*>(ptr);
 	uintptr_t modifed_ptr = ptr_val;
-	builder.append_arr(STRLIT_TO_STRING("0x"),al);
+	builder.append_arr(string("0x"),al);
 	while(modifed_ptr != 0x0){
 	  int mod_val = modifed_ptr & 0x10 - 1;
 	  builder.insert_at(ascii_lookup_tables[mod_val],2,al);

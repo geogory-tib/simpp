@@ -50,7 +50,20 @@ namespace simpp{
 
 	print(string(" ]"));
   }
-
+  template<typename Key,typename T>
+  inline void print_val(map<Key,T> m){
+	auto vals = m.toslice();
+	print("{ ");
+	for(size_t i = 0;i < vals.len;i++){
+	  print_val(vals[i].key);
+	  print(":");
+	  print_val(vals[i].data);
+	  if(i != vals.len - 1)
+		print(", ");
+	}
+	vals.destroy(vals);
+	print(" }");
+  }
   inline void print_val(cslice<string> s){
 	print(string("[ "));
 	for(size_t i = 0;i < s.len;i++){

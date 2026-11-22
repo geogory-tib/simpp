@@ -84,7 +84,7 @@ namespace simpp{
 	  return copy_len;
 	}
 	template<typename Allocator = malloc_allocator>
-	static cslice<T>copy(cslice<T> other,Allocator al = default_alloc){
+	static cslice<T>copy(cslice<T> other,Allocator& al = default_alloc){
 	  cslice<T> ret;
 	  ret.buffer = (T*)al.alloc(other.len * sizeof(T));
 	  ret.len = other.len;
@@ -98,7 +98,28 @@ namespace simpp{
 	  return ret;
 	}
   };
+  /*
+	struct carray:
+	This struct only really exists so array literals or c style arrays can be pased to
+	functions which require a cslice without adding constructors to the cslice type.
+	It inherits from cslice<T> and has constructors that convert
+	array literals and c style arrays to a carray type.
+	example usecases:
+	func_call(simpp::carray<string>{{"Hello","World!"}});
+	...
+	---------------------------------------------
+	string arr[3] = {"Hello","World","\n"}
+	auto joined = simpp::string_join(simpp::carray(arr)," ",allocator);
+	...
+   */
+  template <typename T>
+  struct carray : cslice<T>{
+	template <size_t N>
+    constexpr carray(T (&&arr)[N]) noexcept  : cslice<T>{arr, N} {}
 
+    template <size_t N>
+    constexpr carray(T (&arr)[N]) noexcept : cslice<T>{arr, N} {}
+  };
   
 /*
   dynarray:
@@ -145,7 +166,7 @@ namespace simpp{
 	  return buffer[index];
 	}
 	template <typename Allocator = malloc_allocator>
-	static dynarray<T>make(size_t size,Allocator al = default_alloc){
+	static dynarray<T>make(size_t size,Allocator& al = default_alloc){
 	  dynarray<T> ret{};
 	  ret.buffer = (T *)al.alloc(sizeof(T) * size);
 	  ret.cap = size;
@@ -277,90 +298,174 @@ namespace simpp{
 	bool deleted = false;
   };
   
-  template<typename Key,typename T>
-  struct map{
-	cslice<map_entry<Key,T>> entries;
-	size_t entries_filled = 0;
-	template<typename Allocator = malloc_allocator>
-	static map<Key,T> make(size_t size,Allocator& al = default_alloc){
-	  map<Key,T> ret;
-	  ret.entries = cslice<map_entry<Key,T>>::make(size,al);
-	  std::memset(ret.entries.buffer, 0, sizeof(map_entry<Key,T>) * ret.entries.len);
-	  ret.entries_filled = 0;
-	  return ret;
-	}
-	template<typename Allocator = malloc_allocator>
-	void grow(Allocator& al = default_alloc){
-	  auto new_entry_buf = cslice<map_entry<Key,T>>::make(entries.len * 2,al);
-	  std::memset(new_entry_buf.buffer, 0, sizeof(map_entry<Key,T>) * new_entry_buf.len);
-	  for(size_t i = 0; i < entries.len;i++){
-		if(!entries[i].filled || entries[i].deleted)
-		  continue;
-		auto entry = entries[i];
-		auto hash = map_hash(entry.key);
-		auto ind = hash % new_entry_buf.len;
-		if(new_entry_buf[ind].filled){
-		  do{
-			ind = ind + 1 % new_entry_buf.len;
-		  }while(new_entry_buf[ind].filled);
-		}
-		new_entry_buf[ind] = entry;
-	  }
-	  entries.destroy(entries, al);
-	  entries = new_entry_buf;
-	}
-	bool if_needs_resized(){
-	  float percent_used = (float)(entries_filled) / (float)(entries.len);
-	  if(percent_used >= 0.50f)
-		return true;
-	  return false;
-	}
-	template<typename Allocator = malloc_allocator>
-	void set(Key key,T data,Allocator& al = default_alloc){
-	  if(if_needs_resized()){
-		grow(al);
-	  }
-	  auto hash = map_hash(key);
-	  auto ind = hash % entries.len;
-	  if(entries[ind].filled){
-		do{
-		  ind = ind + 1 % entries.len;
-		}while(entries[ind].filled);
-	  }
-	  entries[ind].data = data;
-	  entries[ind].key = key;
-	  entries[ind].filled = true;
-	  entries_filled++;
-	}
-	T *get(Key key){
-	  auto hash = map_hash(key);
-	  auto ind = hash % entries.len;
-	  if(!(entries[ind].key == key)){
-		do{
-		  ind = ind + 1 % entries.len;
-		  if(!entries[ind].filled)
-			return nullptr;
-		}while(!(entries[ind].key == key));
-	  }
-	  if(entries[ind].deleted)
-		return nullptr;
-	  return &entries[ind].data;
-	}
-	void del(Key key){
-	  auto hash = map_hash(key);
-	  auto ind = hash % entries.len;
-	  if(!(entries[ind].key == key)){
-		do{
-		  ind = ind + 1 % entries.len;
-		}while(!(entries[ind].key == key));
-	  }
-	  entries[ind].deleted = true;
-	}
-	template<typename Allocator = malloc_allocator>
-	void destroy(Allocator& al = default_alloc){
-	  entries.destroy(entries, al);
-	  entries_filled = 0;
-	}
-  };
+template<typename Key, typename T>
+struct map {
+  cslice<map_entry<Key, T>> entries;
+  size_t entries_filled = 0;
+  size_t entries_deleted = 0;
+
+  template<typename Allocator = malloc_allocator>
+  static map<Key, T> make(size_t size, Allocator& al = default_alloc) {
+    map<Key, T> ret;
+    ret.entries = cslice<map_entry<Key, T>>::make(size, al);
+    std::memset(ret.entries.buffer, 0, sizeof(map_entry<Key, T>) * ret.entries.len);
+    ret.entries_filled = 0;
+    ret.entries_deleted = 0;
+    return ret;
+  }
+
+  template<typename Allocator = malloc_allocator>
+  void grow(Allocator& al = default_alloc) {
+    size_t new_len = (entries.len == 0) ? 8 : entries.len * 2;
+    auto new_entry_buf = cslice<map_entry<Key, T>>::make(new_len, al);
+    std::memset(new_entry_buf.buffer, 0, sizeof(map_entry<Key, T>) * new_entry_buf.len);
+
+    size_t live_count = 0;
+    for (size_t i = 0; i < entries.len; i++) {
+      if (!entries[i].filled)
+        continue;
+      if (entries[i].deleted) {
+        if (entries_filled > 0)
+          entries_filled--;
+        continue;
+      }
+
+      auto entry = entries[i];
+      auto hash = map_hash(entry.key);
+      auto ind = hash % new_entry_buf.len;
+      while (new_entry_buf[ind].filled) {
+        ind = (ind + 1) % new_entry_buf.len;
+      }
+      new_entry_buf[ind] = entry;
+      new_entry_buf[ind].filled = true;
+      new_entry_buf[ind].deleted = false;
+      live_count++;
+    }
+
+    if (entries.buffer != nullptr) {
+      entries.destroy(entries, al);
+    }
+    entries = new_entry_buf;
+    entries_filled = live_count;
+    entries_deleted = 0;
+  }
+
+  bool if_needs_resized() {
+    if (entries.len == 0)
+      return true;
+    float percent_used = (float)(entries_filled + entries_deleted) / (float)(entries.len);
+    if (percent_used >= 0.50f)
+      return true;
+    return false;
+  }
+
+  template<typename Allocator = malloc_allocator>
+  void set(Key key, T data, Allocator& al = default_alloc) {
+    if (if_needs_resized()) {
+      grow(al);
+    }
+
+    auto hash = map_hash(key);
+    auto ind = hash % entries.len;
+    bool found_deleted = false;
+    size_t first_deleted = 0;
+
+    for (size_t probed = 0; probed < entries.len; probed++) {
+      auto& entry = entries[ind];
+
+      if (!entry.filled && !entry.deleted) {
+        size_t target = found_deleted ? first_deleted : ind;
+        if (found_deleted && entries_deleted > 0)
+          entries_deleted--;
+        entries[target].key = key;
+        entries[target].data = data;
+        entries[target].filled = true;
+        entries[target].deleted = false;
+        entries_filled++;
+        return;
+      }
+
+      if (entry.filled && entry.deleted) {
+        if (!found_deleted) {
+          found_deleted = true;
+          first_deleted = ind;
+        }
+        ind = (ind + 1) % entries.len;
+        continue;
+      }
+
+      if (entry.filled && !entry.deleted && entry.key == key) {
+        entry.data = data;
+        return;
+      }
+
+      ind = (ind + 1) % entries.len;
+    }
+
+    grow(al);
+    set(key, data, al);
+  }
+
+  T* get(Key key) {
+    if (entries.len == 0)
+      return nullptr;
+
+    auto hash = map_hash(key);
+    auto ind = hash % entries.len;
+
+    for (size_t probed = 0; probed < entries.len; probed++) {
+      auto& entry = entries[ind];
+      if (!entry.filled && !entry.deleted)
+        return nullptr;
+      if (entry.filled && !entry.deleted && entry.key == key)
+        return &entry.data;
+      ind = (ind + 1) % entries.len;
+    }
+
+    return nullptr;
+  }
+
+  void del(Key key) {
+    if (entries.len == 0)
+      return;
+
+    auto hash = map_hash(key);
+    auto ind = hash % entries.len;
+
+    for (size_t probed = 0; probed < entries.len; probed++) {
+      auto& entry = entries[ind];
+      if (!entry.filled && !entry.deleted)
+        return;
+      if (entry.filled && !entry.deleted && entry.key == key) {
+        entry.deleted = true;
+        if (entries_filled > 0)
+          entries_filled--;
+        entries_deleted++;
+        return;
+      }
+      ind = (ind + 1) % entries.len;
+    }
+  }
+
+  template<typename Allocator = malloc_allocator>
+  cslice<map_entry<Key, T>> toslice(Allocator& al = default_alloc) {
+    dynarray<map_entry<Key, T>> builder;
+    builder = builder.make(entries_filled, al);
+    for (size_t i = 0; i < entries.len; i++) {
+      if (entries[i].filled && !entries[i].deleted)
+        builder.append(entries[i], al);
+    }
+    return builder.toslice();
+  }
+
+  template<typename Allocator = malloc_allocator>
+  void destroy(Allocator& al = default_alloc) {
+    if (entries.buffer != nullptr) {
+      entries.destroy(entries, al);
+    }
+    entries_filled = 0;
+    entries_deleted = 0;
+  }
+};
 }
 

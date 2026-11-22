@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdlib>
 #include <cstdio>
-
 /*
   memory.hpp:
 
@@ -76,7 +75,8 @@ namespace simpp{
 	allocated_t get(void *addr);
 	void destroy();
   private:
-	allocated_t *buffer; 
+	void append(allocated_t element);
+	allocated_t *buffer;
 	size_t len;
 	size_t cap;
   };

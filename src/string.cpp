@@ -49,53 +49,50 @@ bool simpp::string_has_suffix(string suffix, string s){
   auto ssuffix = string::slice(s,(s.len) - suffix.len, s.len);
   return ssuffix == suffix;
 }
-simpp::string simpp::string_triml(string trimset,string s){
-  bool found_in_set = true;
-  size_t i = 0;
-  while(i < s.len){
-	auto ch = s[i];
-	for(size_t tset_i = 0; tset_i < trimset.len;tset_i++){
-	  if(trimset[tset_i] == ch){
-		found_in_set = true;
-		break;
-	  }
-	  found_in_set = false;
-	}
-	if(!found_in_set)
-	  break;
-	i++;
+static bool in_trimset(char ch, const simpp::string& trimset) {
+  for (size_t j = 0; j < trimset.len; ++j) {
+    if (trimset[j] == ch) {
+      return true;
+    }
   }
-  if(i == s.len){
-	return string{};
-  }
-  return string::slice(s, i, s.len);
+  return false;
 }
 
-simpp::string simpp::string_trimr(string trimset, string s){
-  bool found_in_set = true;
-  size_t i = s.len - 1;
-  while(i < s.len){
-	auto ch = s[i];
-	for(size_t tset_i = 0; tset_i < trimset.len;tset_i++){
-	  if(trimset[tset_i] == ch){
-		found_in_set = true;
-		break;
-	  }
-	  found_in_set = false;
-	}
-	if(!found_in_set)
-	  break;
-	i--;
+simpp::string simpp::string_triml(string trimset, string s) {
+  if (s.len == 0 || trimset.len == 0) {
+    return string::slice(s, 0, s.len);
   }
-  if(i == 0){
-	return string{};
+
+  size_t start = 0;
+  while (start < s.len && in_trimset(s[start], trimset)) {
+    ++start;
   }
-  return string::slice(s, 0,i + 1);
+
+  if (start == s.len) {
+    return string{};
+  }
+  return string::slice(s, start, s.len);
 }
 
-simpp::string simpp::string_trim(string trimset, string s){
+simpp::string simpp::string_trimr(string trimset, string s) {
+  if (s.len == 0 || trimset.len == 0) {
+    return string::slice(s, 0, s.len);
+  }
+
+  size_t end = s.len;
+  while (end > 0 && in_trimset(s[end - 1], trimset)) {
+    --end;
+  }
+
+  if (end == 0) {
+    return string{};
+  }
+  return string::slice(s, 0, end);
+}
+
+simpp::string simpp::string_trim(string trimset, string s) {
   auto rtrimmed = simpp::string_trimr(trimset, s);
-  return simpp::string_triml(trimset,rtrimmed);
+  return simpp::string_triml(trimset, rtrimmed);
 }
 
 

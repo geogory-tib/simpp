@@ -3,7 +3,10 @@
 #include "containers.hpp"
 #include <cstring>
 #include <cstdint>
-#include <cmath>
+#include<cctype>
+extern "C"{
+  #include <math.h>
+}
 /*
   string.h
   simple string helper functions
@@ -47,7 +50,6 @@ namespace simpp{
 	  buffer = const_cast<char*>(lit);
 	  len = N - 1;
 	}
-	
 	static string from_ptr(char *ptr,size_t ptr_len){
 	  string ret;
 	  ret.buffer = ptr;
@@ -271,6 +273,26 @@ namespace simpp{
 	  modifed_ptr >>= 4;
 	}
 	return builder.toslice();
+  }
+  template<typename Allocator = malloc_allocator>
+  string string_join(cslice<string> strs, string sep, Allocator& al = default_alloc){
+	stringbuilder builder = stringbuilder::make(10,al);
+	for(size_t i = 0;i < strs.len;i++){
+	  builder.append_arr(strs[i], al);
+	  if(i != strs.len - 1 && sep.len != 0)
+		builder.append_arr(sep, al);
+	}
+	return builder.toslice();
+  }
+  template<typename Allocator = malloc_allocator>
+  string string_to_lower(string other,Allocator& al = default_alloc){
+	auto ret = string::copy(other, al);
+	for(size_t i = 0;i < ret.len;i++){
+	  if(iscntrl(ret[i]))
+		continue;
+	  ret[i] = std::tolower(ret[i]);
+	}
+	return ret;
   }
 }
 

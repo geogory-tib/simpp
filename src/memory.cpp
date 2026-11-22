@@ -1,13 +1,16 @@
 #include "memory.hpp"
 #include <cstring>
 #define BYTE_SIZE 1
-void simpp::allocation_tracker::push(void *addr, size_t size){
+void simpp::allocation_tracker::append(allocated_t element){
   if(this->len >= this->cap){
-	this->buffer = (simpp::allocated_t *)std::realloc(this->buffer,sizeof(allocated_t) * ((this->cap + 1) * 2));
-	this->cap = (this->cap + 1) * 2;
+	buffer = (allocated_t *)std::realloc(buffer,sizeof(allocated_t) * ((this->cap + 1) * 2));
+	this->cap = ((this->cap + 1) * 2);
   }
-  this->buffer[this->len] = allocated_t{.addr = addr,.size = size};
+  this->buffer[len] = element;
   this->len++;
+}
+void simpp::allocation_tracker::push(void *addr, size_t size){
+  this->append(allocated_t{.addr = addr,.size = size});
 }
 
 namespace simpp{

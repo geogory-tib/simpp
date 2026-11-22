@@ -263,6 +263,7 @@ namespace simpp{
 	stringbuilder builder = stringbuilder::make(3, al);
 	if(ptr == nullptr){
 	  builder.append_arr(string("(nullptr)"), al);
+	  return builder.toslice(); 
 	}
 	uintptr_t ptr_val = (uintptr_t)const_cast<void*>(ptr);
 	uintptr_t modifed_ptr = ptr_val;

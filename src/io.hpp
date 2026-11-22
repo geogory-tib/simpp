@@ -104,19 +104,20 @@ namespace simpp{
 	int read(cslice<byte> buf){
 	  if(read_in == read_ptr){
 		read_in = base.read(buffer);
-		if(read_in < 0){
-		  return -1;
+		if(read_in <= 0){
+		  return read_in;
 		}
 		read_ptr = 0;
 	  }
 	  int i;
 	  for(i = 0;i < buf.len && read_ptr < read_in;i++){
-		buf[i] = buffer[i + read_ptr];
+		buf[i] = buffer[read_ptr];
+		read_ptr++;
 	  }
 	  return i;
 	}
 	int remaing(){
-	  return read_ptr - read_in;
+	  return read_in - read_ptr;
 	}
 	int filled(){
 	  return read_in;

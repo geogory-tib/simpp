@@ -220,39 +220,39 @@ namespace simpp{
 	
 	template<typename Allocator = malloc_allocator>
 	void append_arr(T *elements,size_t elements_len,Allocator& al = default_alloc){
-	  for(int i = 0;i < elements_len;i++){
+	  for(size_t i = 0;i < elements_len;i++){
 		append(elements[i],al);
 	  }
 	}
 	
 	template<typename Allocator = malloc_allocator>
 	void append_arr(cslice<T> elements,Allocator&al = default_alloc){
-	  for(int i = 0;i < elements.len;i++){
+	  for(size_t i = 0;i < elements.len;i++){
 		append(elements[i],al);
 	  }
 	}
 	
 	template<typename Allocator = malloc_allocator>
 	void append_arr(dynarray<T> elements,Allocator&al = default_alloc){
-	  for(int i = 0;i < elements.len;i++){
+	  for(size_t i = 0;i < elements.len;i++){
 	   append(elements[i],al);
 	  }
 	}
 	template<typename Allocator = malloc_allocator>
 	void insert_arr_at(T *elements,size_t len,size_t index, Allocator& al = default_alloc){
-	  for(int i = 0;i < len;i++){
+	  for(size_t i = 0;i < len;i++){
 		insert_at(elements[i],index + i,al);
 	  }
 	}
 	template<typename Allocator = malloc_allocator>
 	void insert_arr_at(cslice<T> elements,size_t index, Allocator& al = default_alloc){
-	  for(int i = 0;i < elements.len;i++){
+	  for(size_t i = 0;i < elements.len;i++){
 		insert_at(elements[i],index + i,al);
 	  }
 	}
 	template<typename Allocator = malloc_allocator>
 	void insert_arr_at(dynarray<T> elements,size_t index, Allocator& al = default_alloc){
-	  for(int i = 0;i < elements.len;i++){
+	  for(size_t i = 0;i < elements.len;i++){
 		insert_at(elements[i],index + i,al);
 	  }
 	}
@@ -275,7 +275,7 @@ namespace simpp{
 	cslice<byte> key_data = {.buffer = (byte *)key.buffer,.len = (key.len * sizeof(T))};
 	uint64_t hash = 0xcbf29ce484222325ull;
 	for(size_t i = 0;i < key_data.len;i++){
-	  hash ^= key_data[0];
+	  hash ^= key_data[i];
 	  hash *= 0x100000001b3ull;
 	}
 	return hash;
@@ -284,7 +284,7 @@ namespace simpp{
 	byte * data = (byte *)&key;
 	uint64_t hash = 0xcbf29ce484222325ull;
 	for(size_t i = 0;i < sizeof(key);i++){
-	  hash ^= data[0];
+	  hash ^= data[i];
 	  hash *= 0x100000001b3ull;
 	}
 	return hash;

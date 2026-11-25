@@ -69,6 +69,11 @@ namespace simpp{
 	offset_t set_offset(offset_t offset);
 	int get_fd();
 	int close();
+	template<typename Allocator = malloc_allocator>
+	string get_errormsg(Allocator& al = default_alloc){
+	  return string::copy(error_str, al);
+	}
+	int get_errorcode();
   private:
 	int fd = 0;
 	string error_str;

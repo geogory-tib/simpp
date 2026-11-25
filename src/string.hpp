@@ -65,7 +65,7 @@ namespace simpp{
 	this function allocates a new null terminated c style string
 	You must manually dealloc this yourself or use an arena to make
 	handling these easy.
-	If you are interfacing with C code directly you really have no reason to use this
+	Unless you are interfacing with C strings directly you really have no reason to use this
    */
   template<typename Allocator = malloc_allocator>
   char *string_to_cstr(string str, Allocator& al = default_alloc){
@@ -161,6 +161,12 @@ namespace simpp{
 	Do not using string::destroy() on this slice, it will more than break your program if using malloc
    */
   string string_trim(string trimset,string s);
+
+  bool string_to_int(string s, int& val);
+  bool string_to_float(string s,float& val);
+  bool string_to_float(string s,double& val);
+  bool string_to_bool(string s,bool& val);
+  
   // this is kind of slow but it will be okay
   template<typename Allocator = malloc_allocator>
   string string_int_conv(std::int64_t num,Allocator& al = default_alloc){
@@ -269,7 +275,7 @@ namespace simpp{
 	uintptr_t modifed_ptr = ptr_val;
 	builder.append_arr(string("0x"),al);
 	while(modifed_ptr != 0x0){
-	  int mod_val = modifed_ptr & 0x10 - 1;
+	  int mod_val = modifed_ptr & (0x10 - 1);
 	  builder.insert_at(ascii_lookup_tables[mod_val],2,al);
 	  modifed_ptr >>= 4;
 	}

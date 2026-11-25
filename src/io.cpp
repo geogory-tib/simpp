@@ -140,3 +140,7 @@ size_t simpp::fprint(file &f, string str){
   return f.write(bytestr);
 }
 
+int simpp::file::get_errorcode(){
+  return error_code;
+}
+

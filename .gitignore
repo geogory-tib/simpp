@@ -1,3 +1,4 @@
 libsimpp.a
 test*
+*test
 *.o

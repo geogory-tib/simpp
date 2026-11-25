@@ -2,6 +2,9 @@
 #include "io.hpp"
 #include <cstring>
 namespace simpp{
+  inline void print_val(bool val){
+	(val) ? print("true") : print("false");
+  }
   inline void print_val(string val){
 	print(val);
   }

@@ -1,9 +1,26 @@
 #include "memory.hpp"
 #include <cstring>
+#include <cstdint>
+#include <cstddef>
 #define BYTE_SIZE 1
+static size_t align_up(size_t value, size_t align) {
+  /*
+	equal to
+	size_t remainder = value % align;
+	size_t aligning_offset = align - remainder;
+	if(!remainder){
+	 return 0;
+	}
+	return value + offset
+   */
+  return (value + align - 1) & ~(align - 1);
+}
+
 void simpp::allocation_tracker::append(allocated_t element){
+  
+  
   if(this->len >= this->cap){
-	buffer = (allocated_t *)std::realloc(buffer,sizeof(allocated_t) * ((this->cap + 1) * 2));
+	this->buffer = (allocated_t *)std::realloc(this->buffer,sizeof(allocated_t) * ((this->cap + 1) * 2));
 	this->cap = ((this->cap + 1) * 2);
   }
   this->buffer[len] = element;
@@ -42,7 +59,10 @@ simpp::arena simpp::arena::new_arena(size_t size){
 }
 
 void *simpp::arena::alloc(size_t size){
-  if ((this->brk + size) >= this->cap) {
+  //  constexpr align = alignof(std::max_align_t);
+
+  // size_t aligned_offset = 
+  if ((this->brk) >= this->cap) {
     return NULL;
   }
   void *ret = (((char *)this->buffer) + this->brk);
@@ -125,7 +145,7 @@ simpp::garena simpp::garena::new_garena(size_t page_size){
 }
 simpp::garena_page *simpp::garena::new_page(){
   if(this->pages_len >= this->pages_cap){
-	this->pages = (garena_page *)realloc(this->pages, sizeof(garena_page) * ((this->pages_cap + 1) * 2));
+	this->pages = (garena_page *)std::realloc(this->pages, sizeof(garena_page) * ((this->pages_cap + 1) * 2));
 	this->pages_cap = (this->pages_cap + 1) * 2;
   }
   garena_page page = simpp::garena_page::new_page(this->page_size);
@@ -134,14 +154,36 @@ simpp::garena_page *simpp::garena::new_page(){
   this->pages_len++;
   return ret;
 }
+
+
+// fixed issue with unaligned addresses
 void *simpp::garena::alloc(size_t size){
+  constexpr size_t align = alignof(std::max_align_t);
+
+  if (pages_len <= 0) {
+    this->new_page();
+  }
+  // TODO -- REVIEW
+  // i kinda stole this from AI, I actually don't think half
+  // of what it is doing is nessicary, I am too tired today to
+  // test it so I am just going to send it for tonight
+  size_t max_needed = size + (align - 1);
+  if (max_needed >= this->page_size) {
+    this->page_size = max_needed * 2;
+    this->new_page();
+  }
+
   simpp::garena_page *current_page = &this->pages[this->pages_len - 1];
-  if(size >= this->page_size){
-	this->page_size = size * 2;
-	current_page = this->new_page();
-  }else if(current_page->brk + size >= current_page->cap)
-	current_page = this->new_page();
-  void *ret = current_page->alloc(size);
+  size_t aligned_offset = align_up(current_page->brk, align);
+
+  if (aligned_offset + size > current_page->cap) {
+    current_page = this->new_page();
+    aligned_offset = align_up(current_page->brk, align);
+  }
+
+  current_page->brk = align_up(aligned_offset + size, align);
+
+  void *ret = static_cast<uint8_t *>(current_page->buffer) + aligned_offset;
   this->tracker.push(ret, size);
   return ret;
 }
@@ -160,7 +202,6 @@ void *simpp::garena::realloc(void *addr, size_t size){
 	copy_size = size;
   }
   std::memcpy(ret, addr, copy_size);
-  this->tracker.push(ret, size);
   return ret;
 }
 

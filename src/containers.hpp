@@ -49,7 +49,7 @@ namespace simpp{
 #endif	  
 	  return buffer[index];
 	}
-	bool operator==(cslice<T>& other){
+	bool operator==(const cslice<T>& other){
 	  if(other.len != len)
 		return false;
 	  for(size_t i = 0;i < len;i++){
@@ -300,7 +300,7 @@ namespace simpp{
   
 template<typename Key, typename T>
 struct map {
-  cslice<map_entry<Key, T>> entries;
+  cslice<map_entry<Key, T>> entries = {};
   size_t entries_filled = 0;
   size_t entries_deleted = 0;
 
@@ -318,7 +318,7 @@ struct map {
   void grow(Allocator& al = default_alloc) {
     size_t new_len = (entries.len == 0) ? 8 : entries.len * 2;
     auto new_entry_buf = cslice<map_entry<Key, T>>::make(new_len, al);
-    std::memset(new_entry_buf.buffer, 0, sizeof(map_entry<Key, T>) * new_entry_buf.len);
+    std::memset((void *)new_entry_buf.buffer, 0, sizeof(map_entry<Key, T>) * new_entry_buf.len);
 
     size_t live_count = 0;
     for (size_t i = 0; i < entries.len; i++) {

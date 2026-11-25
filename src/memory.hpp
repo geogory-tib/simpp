@@ -141,12 +141,13 @@ namespace simpp{
 	void *realloc(void *,size_t);
 	void destory() // frees all memory used by the arena
   */
+  constexpr size_t default_garena_page_size = 4096;
   class garena{
   public:
 	garena_page *pages = nullptr;
 	size_t pages_len = 0;
 	size_t pages_cap = 0;
-	size_t page_size = 0;
+	size_t page_size = default_garena_page_size;
 	static garena new_garena(size_t page_size);
 	void *alloc(size_t size);
 	// no-op like on the arena
@@ -154,7 +155,7 @@ namespace simpp{
 	void *realloc(void *addr,size_t size);
 	void destroy();
   private:
-	allocation_tracker tracker;
+	allocation_tracker tracker = {};
 	garena_page* new_page();
   };
 /*

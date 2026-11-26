@@ -125,7 +125,7 @@ simpp::iniparser_err *simpp::iniparser::lex_contents(){
 	  continue;
 	  break;
 	case '=':
-	  pstate.contents.append((ini_token){.raw = "=",.type = TOK_EQ},internal_alloc);
+	  pstate.contents.append(ini_token{.raw = "=",.type = TOK_EQ},internal_alloc);
 	  continue;
 	  break;
 	case '"':
@@ -135,7 +135,7 @@ simpp::iniparser_err *simpp::iniparser::lex_contents(){
 	case '\r':
 	  continue;
 	case '\n':
-	  pstate.contents.append((ini_token){.raw = "\\n",.type = TOK_LNEND}, internal_alloc);
+	  pstate.contents.append(ini_token{.raw = "\\n",.type = TOK_LNEND}, internal_alloc);
 	  continue;
 	  break;
 	}
@@ -144,7 +144,7 @@ simpp::iniparser_err *simpp::iniparser::lex_contents(){
 	else if(isblank(ch))
 	  continue;
   }
-  pstate.contents.append((ini_token){.raw = "EOF",TOK_EOF}, internal_alloc);
+  pstate.contents.append(ini_token{.raw = "EOF",.type = TOK_EOF}, internal_alloc);
   return nullptr;
 }
 
@@ -402,7 +402,9 @@ simpp::iniparser_err *simpp::iniparser::writefile(string path){
   }
   stringbuilder builder = stringbuilder::make(512, internal_alloc);
   auto global_sect = sections.get(global_section_name);
-  write_section(*global_sect, global_section_name,builder);
+  if(global_sect != nullptr){
+	write_section(*global_sect, global_section_name,builder);
+  }
   auto sections_slice = sections.toslice(internal_alloc);
   for(size_t i = 0; i < sections_slice.len;i++){
 	if(sections_slice[i].key == global_section_name)
@@ -430,7 +432,11 @@ void simpp::iniparser::write_section(map<string,string>& section,string section_
   for(size_t i = 0; i < sect_slice.len;i++){
 	builder.append_arr(sect_slice[i].key, internal_alloc);
 	builder.append_arr(string("  =  "), internal_alloc);
+	if(string_contains_any(" \t", sect_slice[i].data))
+	  builder.append('"', internal_alloc);
 	builder.append_arr(sect_slice[i].data, internal_alloc);
+	if(string_contains_any(" \t", sect_slice[i].data))
+	  builder.append('"', internal_alloc);
 	builder.append('\n', internal_alloc);
   }
 }

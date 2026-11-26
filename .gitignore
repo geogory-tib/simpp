@@ -1,4 +1,5 @@
 libsimpp.a
+*tar.xz
 test*
 *test
 *.o

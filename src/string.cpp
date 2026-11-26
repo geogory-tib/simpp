@@ -129,13 +129,13 @@ bool simpp::string_to_float(string s, double &val){
 	is_signed = true;
   }
   int dot_ind = -1;
-  int whole_len = 0;
+  //  int whole_len = 0;
   for(size_t i = 0;i < s.len;i++){
 	if(s[i] == '.'){
 	  dot_ind = i;
 	  break;
 	}
-	whole_len++;
+	//whole_len++;
   }
   auto whole_portion_str = string::slice(s, 0, dot_ind);
   double whole_decimal_place = 1;
@@ -175,13 +175,13 @@ bool simpp::string_to_float(string s, float &val){
 	is_signed = true;
   }
   int dot_ind = -1;
-  int whole_len = 0;
+  //int whole_len = 0;
   for(size_t i = 0;i < s.len;i++){
 	if(s[i] == '.'){
 	  dot_ind = i;
 	  break;
 	}
-	whole_len++;
+	//whole_len++;
   }
   auto whole_portion_str = string::slice(s, 0, dot_ind);
   float whole_decimal_place = 1;

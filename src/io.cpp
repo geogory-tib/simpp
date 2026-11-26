@@ -8,6 +8,9 @@ extern"C"{
 #include <unistd.h>
 }
 #endif
+
+
+
 int simpp::file::write(cslice<byte> buf){
   int n = ::write(this->fd, buf.buffer, buf.len);
   if(n < 0){
@@ -143,4 +146,6 @@ size_t simpp::fprint(file &f, string str){
 int simpp::file::get_errorcode(){
   return error_code;
 }
+
+
 
